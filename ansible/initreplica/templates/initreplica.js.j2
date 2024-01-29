@@ -1,0 +1,12 @@
+rs.initiate({
+  _id: "myreplicaset",
+  version: 1,
+  members: [
+    {% for host in groups['mongodb'] %}
+    { _id: {{ loop.index }}, host : "{{ hostvars[host].ansible_host }}:27017" },
+    {% endfor %}
+    ]
+  }
+)
+
+printjson(rs.status())

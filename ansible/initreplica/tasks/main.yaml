@@ -1,0 +1,35 @@
+---
+# Tasks file for initiating from MongoDB Replicaset Primary  (MongoDB Lead)
+
+- name: MongoDB Lead -  copy file for initialization script
+  template:
+      src: initreplica.js.j2
+      dest: /home/ubuntu/initreplica.js
+      mode: '0666'
+
+- name: MongoDB Lead - Execute the initialization script and add all replicants
+  shell: /usr/bin/mongosh /home/ubuntu/initreplica.js
+  ignore_errors: yes
+  register: init_result
+
+- name: Check if replication set is already initialized
+  debug:
+    msg: "Replication set is already initialized"
+  when: "'already initialized' in init_result.stderr"
+
+- name: Execute initialization script only if replication set is not already initialized
+  shell: /usr/bin/mongosh /home/ubuntu/initreplica.js
+  ignore_errors: yes
+  register: init_result
+  when: "'already initialized' not in init_result.stderr"
+
+- name: Create MongoDB root user
+  community.mongodb.mongodb_user:
+    login_host: "172.31.27.182"
+    login_port: "27017"
+    database: "admin"
+    name:  "{{ mongodb_root_user }}"
+    password:  "{{ mongodb_root_password }}"
+    roles: "root"
+  when: "'mongodb_lead' in group_names"
+

@@ -1,0 +1,16 @@
+[mongodb_lead]
+node-primary ansible_host=${ip_mongo_node1}
+
+[mongodb_secondary-1]
+node-secondary-1 ansible_host=${ip_mongo_node2}
+
+[mongodb_secondary-2]
+node-secondary-2 ansible_host=${ip_mongo_node3}
+
+[mongodb:children]
+mongodb_lead
+mongodb_secondary-1
+mongodb_secondary-2
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3

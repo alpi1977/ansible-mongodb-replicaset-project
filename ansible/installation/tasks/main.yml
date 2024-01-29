@@ -1,0 +1,92 @@
+---
+# Tasks file for Installation in all MongoDB ReplicaSet Nodes including both Primary and Secondary Nodes 
+
+- name: Set Hostnames for managed nodes
+  hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: MongoDB - Import public key
+  apt_key:
+    url: https://pgp.mongodb.com/server-7.0.asc
+    state: present
+
+- name: Installing dependencies
+  package:
+      name: "{{item}}"
+      state: present
+      update_cache: yes
+  loop:
+    - curl
+    - gnupg
+    - python3-pip
+  become: yes
+
+- name: Install pymongo
+  pip:
+    name: pymongo
+
+# - name: Generate MongoDB key file
+#   shell: "openssl rand -base64 756 > {{ mongodb_keyfile_path }}"
+#   args:
+#     creates: "{{ mongodb_keyfile_path }}"
+#   check_mode: no
+
+
+# - name: Set key file permissions
+#   file:
+#     path: "{{ mongodb_keyfile_path }}"
+#     mode: '0600'
+
+- name: MongoDB - Add repository
+  apt_repository:
+    repo: deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu focal/mongodb-org/7.0 multiverse
+    state: present
+    filename: mongodb-org-7.0.list
+    mode: '0666'
+
+- name: Update all packages latest version
+  apt:
+    name: "*"
+    state: latest
+
+- name: MongoDB - Installation
+  apt:
+    pkg:
+    - mongodb-org=7.0.5
+    - mongodb-org-database=7.0.5
+    - mongodb-org-server=7.0.5
+    - mongodb-mongosh=2.1.1
+    - mongodb-org-mongos=7.0.5
+    - mongodb-org-tools=7.0.5
+    state: present
+    update_cache: yes
+
+- name: MongoDB - Copy configuration file for primary node
+  template:
+    force: yes
+    src: mongod.conf.j2
+    dest: /etc/mongod.conf
+  notify: Start mongodb
+  when: "'mongodb_lead' in group_names"
+
+- name: MongoDB - Copy configuration file for node secondary-1
+  template:
+    force: yes
+    src: mongod.confsecondary1.j2
+    dest: /etc/mongod.conf
+  notify: Start mongodb
+  when: "'mongodb_secondary-1' in group_names"  
+
+- name: MongoDB - Copy configuration file for  node secondary-2
+  template:
+    force: yes
+    src: mongod.confsecondary2.j2
+    dest: /etc/mongod.conf
+  notify: Start mongodb
+  when: "'mongodb_secondary-2' in group_names" 
+
+- name: MongoDB - Ensure mongodb is running and enabled to start automatically after reboots
+  systemd:
+    name: mongod
+    enabled: yes
+    state: started
