@@ -1,0 +1,9 @@
+myami = "ami-0aa2b7722dc1b5612"
+mykey = "aozer"
+tags = ["mongodb1", "mongodb2", "mongodb3"]
+instancetype = "t2.micro"
+# availabilityzone = ["us-east-1a", "us-east-1b", "us-east-1c"]
+num = 3
+region = "us-east-1"
+mysecgr = "ansible-mongo-project-sec-gr"
+user = "alp"
